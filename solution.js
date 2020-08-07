@@ -6,6 +6,8 @@ Tool : Postman
 
 var express = require('express');
 
+const replaceString = require('replace-string');
+
 var app = express();
 
 var bodyParser = require('body-parser');
@@ -13,12 +15,8 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended : false}));
 
-var out = [
-];
-
 app.get('/', function(req,res)
 {
-	
 	res.send(out);
 });
 
@@ -26,30 +24,29 @@ app.post('/', function(req,res)
 {
 	var input = req.body;
 
-	var myJSON = JSON.stringify(input);
+	var ref=(input.referenceData);
 
-	var REF_MSISDN=req.body.referenceData.REF_MSISDN;
-	var REF_IMSI=req.body.referenceData.REF_IMSI;
-	var REF_SERVPROFID=req.body.referenceData.REF_SERVPROFID;
+	var myJSON = JSON.stringify(input.payload);
 
-	var mapObj = 
+	var mapDict = new Map();
+	
+	for(x in ref)
 	{
-   		'{REF_IMSI}':REF_IMSI,
-  		'{REF_MSISDN}':REF_MSISDN,
-   		'{REF_SERVPROFID}':REF_SERVPROFID
-	};
+		mapDict.set(x,ref[x]);
+	}
 
-	myJSON = myJSON.replace(/{REF_IMSI}|{REF_MSISDN}|{REF_SERVPROFID}/gi, function(matched){
-  		return mapObj[matched];
-	});
-		
+	var itr=mapDict.keys();
+
+	for(var a=0;a<mapDict.size;a++)
+	{
+		const key=itr.next().value;
+		console.log(key +'   '+mapDict.get(key));
+		myJSON = replaceString(myJSON, '{'+key+'}', mapDict.get(key));
+	}
+
 	input=JSON.parse(myJSON);
 	
-	if(!input || input.text ==="")
-	{
-		response.status(500).send({error: "Empty Value"});
-	}
-	else
+	if(input)
 	{
 		delete input['referenceData'];	
 		out.push(input);
